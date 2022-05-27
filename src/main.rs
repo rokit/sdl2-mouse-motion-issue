@@ -1,5 +1,6 @@
 use sdl2::event::{Event, EventType, WindowEvent};
 use sdl2::keyboard::Keycode;
+use sdl2::video::FullscreenType;
 use std::borrow::Cow;
 
 use pollster;
@@ -40,7 +41,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     video_subsystem.text_input().stop();
     let event_subsystem = sdl_context.event().unwrap();
 
-    let window = video_subsystem
+    let mut window = video_subsystem
         .window("Window", WINDOW_WIDTH, WINDOW_HEIGHT)
         .position_centered()
         .resizable()
@@ -48,8 +49,8 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         .map_err(|e| e.to_string())?;
     let (width, height) = window.size();
 
-    // uncomment to see the issue improve, but not disappear
     let mouse_util = sdl_context.mouse();
+    // uncomment to see the issue improve, but not disappear
     // mouse_util.set_relative_mouse_mode(true);
 
     let instance = wgpu::Instance::new(wgpu::Backends::PRIMARY);
@@ -155,16 +156,14 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     let mut event_pump = sdl_context.event_pump()?;
     'running: loop {
-        let event_poll_iterator = event_pump.poll_iter();
+        let events: Vec<Event> = event_pump.poll_iter().collect();
 
-        // Uncomment to consume the iterator and output how many events we had.
-        // Also see the problem disappear.
-        // While continuously moving the mouse, this number bounced between 1 and 2.
-        // Requires force stop of program.
-        // println!("num events: {:?}", event_poll_iterator.count());
-
-        for event in event_pump.poll_iter() {
+        for event in events {
             match event {
+                Event::MouseMotion { x, y, .. } => {
+                    // comment this, and the triangle movement becomes jittery
+                    println!("x: {x}, y: {y}");
+                }
                 Event::Window { win_event, .. } => {
                     if let WindowEvent::Resized(w, h) = win_event {
                         config.width = w as u32;
@@ -172,10 +171,28 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
                         surface.configure(&device, &config);
                     }
                 }
-                Event::MouseMotion { x, y, .. } => {
-                    // Process one mouse motion and flush the rest.
-                    // This makes no difference.
-                    event_subsystem.flush_event(EventType::MouseMotion);
+                Event::KeyDown {
+                    keycode: Some(Keycode::F11),
+                    ..
+                } => {
+                    let fs = window.fullscreen_state();
+                    match fs {
+                        FullscreenType::Off => {
+                            window.set_fullscreen(FullscreenType::Desktop)?;
+                            let (width, height) = window.size();
+                            config.width = width;
+                            config.height = height;
+                            surface.configure(&device, &config);
+                        }
+                        FullscreenType::Desktop => {
+                            window.set_fullscreen(FullscreenType::Off)?;
+                            let (width, height) = window.size();
+                            config.width = width;
+                            config.height = height;
+                            surface.configure(&device, &config);
+                        }
+                        _ => window.set_fullscreen(FullscreenType::Off)?,
+                    }
                 }
                 Event::Quit { .. }
                 | Event::KeyDown {
