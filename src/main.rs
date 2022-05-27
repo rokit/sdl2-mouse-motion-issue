@@ -1,4 +1,4 @@
-use sdl2::event::{Event, WindowEvent};
+use sdl2::event::{Event, EventType, WindowEvent};
 use sdl2::keyboard::Keycode;
 use std::borrow::Cow;
 
@@ -38,6 +38,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     let sdl_context = sdl2::init()?;
     let video_subsystem = sdl_context.video()?;
     video_subsystem.text_input().stop();
+    let event_subsystem = sdl_context.event().unwrap();
 
     let window = video_subsystem
         .window("Window", WINDOW_WIDTH, WINDOW_HEIGHT)
@@ -48,7 +49,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     let (width, height) = window.size();
 
     // uncomment to see the issue improve, but not disappear
-    // let mouse_util = sdl_context.mouse();
+    let mouse_util = sdl_context.mouse();
     // mouse_util.set_relative_mouse_mode(true);
 
     let instance = wgpu::Instance::new(wgpu::Backends::PRIMARY);
@@ -154,6 +155,14 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     let mut event_pump = sdl_context.event_pump()?;
     'running: loop {
+        let event_poll_iterator = event_pump.poll_iter();
+
+        // Uncomment to consume the iterator and output how many events we had.
+        // Also see the problem disappear.
+        // While continuously moving the mouse, this number bounced between 1 and 2.
+        // Requires force stop of program.
+        // println!("num events: {:?}", event_poll_iterator.count());
+
         for event in event_pump.poll_iter() {
             match event {
                 Event::Window { win_event, .. } => {
@@ -162,6 +171,11 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
                         config.height = h as u32;
                         surface.configure(&device, &config);
                     }
+                }
+                Event::MouseMotion { x, y, .. } => {
+                    // Process one mouse motion and flush the rest.
+                    // This makes no difference.
+                    event_subsystem.flush_event(EventType::MouseMotion);
                 }
                 Event::Quit { .. }
                 | Event::KeyDown {
