@@ -571,7 +571,6 @@ dependencies = [
  "bytemuck",
  "glam",
  "pollster",
- "raw-window-handle",
  "sdl2",
  "wgpu",
 ]
