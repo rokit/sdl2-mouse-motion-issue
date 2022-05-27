@@ -51,7 +51,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     let mouse_util = sdl_context.mouse();
     // uncomment to see the issue improve, but not disappear
-    // mouse_util.set_relative_mouse_mode(true);
+    mouse_util.set_relative_mouse_mode(true);
 
     let instance = wgpu::Instance::new(wgpu::Backends::PRIMARY);
     let surface = unsafe { instance.create_surface(&window) };
@@ -154,20 +154,34 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     let mut angle: f32 = 0.0;
 
+    let mut mouseX = 0;
+    let mut mouseY = 0;
+
     let mut event_pump = sdl_context.event_pump()?;
     'running: loop {
         let events: Vec<Event> = event_pump.poll_iter().collect();
 
-        for event in events {
+        let mouse_events: Vec<&Event> = events.iter().filter(|e| e.is_mouse()).collect();
+        let other_events: Vec<&Event> = events.iter().filter(|e| !e.is_mouse()).collect();
+
+        if let Some(event) = mouse_events.last() {
             match event {
                 Event::MouseMotion { x, y, .. } => {
-                    // comment this, and the triangle movement becomes jittery
-                    println!("x: {x}, y: {y}");
+                    // uncomment this, and the triangle movement becomes smooth
+                    // println!("x: {x}, y: {y}");
+                    mouseX = *x;
+                    mouseY = *y;
                 }
+                _ => {}
+            }
+        }
+
+        for event in other_events {
+            match event {
                 Event::Window { win_event, .. } => {
                     if let WindowEvent::Resized(w, h) = win_event {
-                        config.width = w as u32;
-                        config.height = h as u32;
+                        config.width = *w as u32;
+                        config.height = *h as u32;
                         surface.configure(&device, &config);
                     }
                 }
