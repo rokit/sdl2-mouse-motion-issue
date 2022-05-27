@@ -47,6 +47,10 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         .map_err(|e| e.to_string())?;
     let (width, height) = window.size();
 
+    // uncomment to see the issue improve, but not disappear
+    // let mouse_util = sdl_context.mouse();
+    // mouse_util.set_relative_mouse_mode(true);
+
     let instance = wgpu::Instance::new(wgpu::Backends::PRIMARY);
     let surface = unsafe { instance.create_surface(&window) };
     let adapter_opt = pollster::block_on(instance.request_adapter(&wgpu::RequestAdapterOptions {
