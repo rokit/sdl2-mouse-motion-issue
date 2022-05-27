@@ -51,7 +51,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     let mouse_util = sdl_context.mouse();
     // uncomment to see the issue improve, but not disappear
-    mouse_util.set_relative_mouse_mode(true);
+    // mouse_util.set_relative_mouse_mode(true);
 
     let instance = wgpu::Instance::new(wgpu::Backends::PRIMARY);
     let surface = unsafe { instance.create_surface(&window) };
@@ -164,7 +164,8 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         let mouse_events: Vec<&Event> = events.iter().filter(|e| e.is_mouse()).collect();
         let other_events: Vec<&Event> = events.iter().filter(|e| !e.is_mouse()).collect();
 
-        if let Some(event) = mouse_events.last() {
+        // println!("mouse_events.len(): {:?}", mouse_events.len());
+        for event in mouse_events {
             match event {
                 Event::MouseMotion { x, y, .. } => {
                     // uncomment this, and the triangle movement becomes smooth
